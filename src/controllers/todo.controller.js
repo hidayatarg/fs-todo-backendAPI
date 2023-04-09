@@ -1,6 +1,9 @@
 const db = require('../config/pool');
 const ErrorHandler = require('../utils/errorHandler');
 
+const dbs = require('../config/db.config');
+const {Todo} = dbs;
+
 
 const getAllTodoQuery = 'SELECT * FROM public."Todo" ORDER BY id DESC';
 const getTodoByIdQuery = 'SELECT * FROM public."Todo" WHERE id = $1';
@@ -12,14 +15,31 @@ const updateTodoIsCompleteByIdQuery = 'UPDATE public."Todo" SET "isCompleted" = 
 
 // Retrieve all
 exports.findAll = async (req, res, next) => {
-	const result = await db.query(getAllTodoQuery);
-	if (result.rowCount === 0) {
-		return next(new ErrorHandler('Todo Not Found', 200));
-	}
-	res.status(200).json({
-		success: true,
-		data: result.rows,
-	});
+	// const result = await db.query(getAllTodoQuery);
+	// if (result.rowCount === 0) {
+	// 	return next(new ErrorHandler('Todo Not Found', 200));
+	// }
+	// res.status(200).json({
+	// 	success: true,
+	// 	data: result.rows,
+	// });
+
+
+	const firstname = req.query.firstname;
+	var condition = firstname
+	  ? { firstname: { [Op.iLike]: `%${firstname}%` } }
+	  : null;
+  
+	Todo.findAll({ where: condition })
+	  .then((data) => {
+		res.send(data);
+	  })
+	  .catch(err => {
+		res.status(500).send({
+		  message:
+			err.message || 'Some error occurred while retrieving data.',
+		});
+	  });
 };
 
 // Retrieve by id
